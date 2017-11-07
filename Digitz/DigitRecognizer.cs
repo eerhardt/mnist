@@ -85,10 +85,10 @@ namespace Digitz
                 // representing the likelihood of that index being the digit
                 IList<float> outputData = outputVal.GetDenseData<float>(outputVar).Single();
 
-                List<MNISTResult> results = new List<MNISTResult>(outputData.Count);
+                List<DigitResult> results = new List<DigitResult>(outputData.Count);
                 for (int i = 0; i < outputData.Count; i++)
                 {
-                    results.Add(new MNISTResult() { Digit = i, Confidence = outputData[i] });
+                    results.Add(new DigitResult() { Digit = i, Confidence = outputData[i] });
                 }
 
                 // sort so the highest confidence is first
@@ -99,7 +99,7 @@ namespace Digitz
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.ToString());
-                return new List<MNISTResult>();
+                return new List<DigitResult>();
             }
         }
 

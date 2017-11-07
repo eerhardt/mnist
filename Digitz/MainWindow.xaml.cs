@@ -14,7 +14,7 @@ namespace Digitz
     /// </summary>
     public partial class MainWindow : Window
     {
-        private MNISTEvaluator _evaluator = new MNISTEvaluator();
+        private DigitRecognizer _digitRecognizer = new DigitRecognizer();
 
         public MainWindow()
         {
@@ -23,7 +23,7 @@ namespace Digitz
 
         private void recognizeButton_Click(object sender, RoutedEventArgs e)
         {
-            List<MNISTResult> results = _evaluator.Evaluate(GetHandWrittenImage());
+            List<DigitResult> results = _digitRecognizer.Evaluate(GetHandWrittenImage());
 
             // the result is sorted by confidence. so the first is the highest
             numberLabel.Text = results.FirstOrDefault()?.Digit.ToString() ?? "N/A";
