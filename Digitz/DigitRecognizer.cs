@@ -1,4 +1,5 @@
-﻿using CNTK;
+﻿using Microsoft.ML;
+using Microsoft.ML.Data;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,20 +7,20 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 
 namespace Digitz
 {
     class DigitRecognizer
     {
-        private static readonly DeviceDescriptor CpuDevice = DeviceDescriptor.CPUDevice;
-        private Function _mnistFunction;
-        private Variable _mnistInput;
+        private readonly MLContext _context = new MLContext();
+        private ITransformer _model;
+        private PredictionEngine<MNistInput, MNistOutput> _engine;
 
         public DigitRecognizer()
         {
-            // This example requires the MNISTConvolution.model.
-            LoadModel("digit.model");
+            LoadModel("MNIST-original.zip");
+            //LoadModel("MNIST-retrained.zip");
+            //LoadModel("MNIST-retrainedWithHash.zip");
         }
 
         /// <summary>
@@ -27,7 +28,7 @@ namespace Digitz
         /// </summary>
         public List<DigitResult> Evaluate(Bitmap image)
         {
-            Tensor<float> imageData = ConvertImageToTensorData(image);
+            float[] imageData = ConvertImageToTensorData(image);
 
             return Evaluate(imageData);
         }
@@ -35,13 +36,13 @@ namespace Digitz
         /// <summary>
         /// Converts the image into the expected data for the MNIST model.
         /// </summary>
-        private Tensor<float> ConvertImageToTensorData(Bitmap image)
+        private float[] ConvertImageToTensorData(Bitmap image)
         {
-            int width = _mnistInput.Shape.Dimensions[0];
-            int height = _mnistInput.Shape.Dimensions[1];
+            int width = 28;
+            int height = 28;
             image = ResizeImage(image, new Size(width, height));
 
-            Tensor<float> imageData = new DenseTensor<float>(new[] { width, height }, true); // CNTK uses ColumnMajor layout
+            float[] imageData = new float[width * height];
 
             for (int x = 0; x < width; x++)
             {
@@ -51,45 +52,31 @@ namespace Digitz
                     float pixelValue = (color.R + color.G + color.B) / 3;
 
                     // Turn to black background and white digit like MNIST model expects
-                    imageData[x, y] = (255 - pixelValue);
+                    imageData[x + (y * height)] = (255 - pixelValue);
                 }
             }
 
             return imageData;
         }
 
-        private List<DigitResult> Evaluate(Tensor<float> imageData)
+        internal void Record(Bitmap image)
+        {
+            float[] imageData = ConvertImageToTensorData(image);
+
+            File.AppendAllText(@"..\..\..\..\Training\input\MNISTRecords.txt", string.Join(",", imageData) + Environment.NewLine);
+        }
+
+        private List<DigitResult> Evaluate(float[] imageData)
         {
             try
             {
-                // Get output variable
-                Variable outputVar = _mnistFunction.Output;
-
-                var inputDataMap = new Dictionary<Variable, Value>();
-                var outputDataMap = new Dictionary<Variable, Value>();
-
-                // Create input data map
-                Value inputVal = Value.CreateBatch(_mnistInput.Shape, imageData, CpuDevice);
-                inputDataMap.Add(_mnistInput, inputVal);
-
-                // Create output data map
-                outputDataMap.Add(outputVar, null);
-
-                // Start evaluation on the device
-                _mnistFunction.Evaluate(inputDataMap, outputDataMap, CpuDevice);
-
-                // Get evaluate result as dense output
-                Value outputVal = outputDataMap[outputVar];
-
-                // The model has only one single output - a list of 10 floats
-                // representing the likelihood of that index being the digit
-                IList<float> outputData = outputVal.GetDenseData<float>(outputVar).Single();
-
-                List<DigitResult> results = new List<DigitResult>(outputData.Count);
-                for (int i = 0; i < outputData.Count; i++)
+                var prediction = _engine.Predict(new MNistInput()
                 {
-                    results.Add(new DigitResult() { Digit = i, Confidence = outputData[i] });
-                }
+                    Placeholder = imageData
+                });
+
+                List<DigitResult> results = new List<DigitResult>(10);
+                results.Add(new DigitResult() { Digit = (int)prediction.PredictedLabel });
 
                 // sort so the highest confidence is first
                 results = results.OrderByDescending(r => r.Confidence).ToList();
@@ -112,10 +99,8 @@ namespace Digitz
                     $"Error: The model '{modelFilePath}' does not exist. Please follow instructions in README.md in <CNTK>/Examples/Image/ConvNet to create the model.");
             }
 
-            _mnistFunction = Function.Load(modelFilePath, CpuDevice);
-
-            // Get input variable. The model has only one single input.
-            _mnistInput = _mnistFunction.Arguments.Single();
+            _model = _context.Model.Load(modelFilePath, out _);
+            _engine = _context.Model.CreatePredictionEngine<MNistInput, MNistOutput>(_model);
         }
 
         private static Bitmap ResizeImage(Bitmap imgToResize, Size size)
@@ -134,5 +119,17 @@ namespace Digitz
     {
         public int Digit { get; set; }
         public float Confidence { get; set; }
+    }
+
+    class MNistInput
+    {
+        public long Label { get; set; }
+        [VectorType(784)]
+        public float[] Placeholder { get; set; }
+    }
+
+    class MNistOutput
+    {
+        public long PredictedLabel { get; set; }
     }
 }

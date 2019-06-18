@@ -57,6 +57,11 @@ namespace Digitz
             return bitmap;
         }
 
+        private void record_Click(object sender, RoutedEventArgs e)
+        {
+            _digitRecognizer.Record(GetHandWrittenImage());
+        }
+
         #region HideIcon
         protected override void OnSourceInitialized(EventArgs e)
         {
