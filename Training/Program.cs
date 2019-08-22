@@ -8,7 +8,6 @@ namespace TFRetrain
 {
     class Program
     {
-        static readonly string model_location = "mnist_conv_model";
         static readonly MLContext mlContext = new MLContext(seed: 1);
         static readonly TextLoader loader = mlContext.Data.CreateTextLoader(columns: new[]
             {
@@ -27,7 +26,7 @@ namespace TFRetrain
         {
             IEstimator<ITransformer> pipe = mlContext.Transforms.NormalizeMinMax("Features", "Placeholder");
             pipe = pipe
-                .Append(mlContext.Model.LoadTensorFlowModel(model_location).ScoreTensorFlowModel(
+                .Append(mlContext.Model.LoadTensorFlowModel("mnist_conv_model").ScoreTensorFlowModel(
                     inputColumnNames: new[] { "Features" },
                     outputColumnNames: new[] { "Prediction" }
                     ));
@@ -47,7 +46,7 @@ namespace TFRetrain
         {
             IEstimator<ITransformer> pipe = mlContext.Transforms.NormalizeMinMax("Features", "Placeholder");
             pipe = pipe
-                .Append(mlContext.Model.LoadTensorFlowModel(model_location).RetrainTensorFlowModel(
+                .Append(mlContext.Model.LoadTensorFlowModel("mnist_conv_model").RetrainTensorFlowModel(
                     inputColumnNames: new[] { "Features" },
                     outputColumnNames: new[] { "Prediction" },
                     labelColumnName: "Label",
@@ -88,7 +87,7 @@ namespace TFRetrain
             Console.WriteLine(metrics.MicroAccuracy);
 
             Directory.CreateDirectory(@"..\..\..\output\");
-            mlContext.Model.Save(model, null, @$"..\..\..\output\{modelFileName}.zip");
+            mlContext.Model.Save(model, null, $@"..\..\..\output\{modelFileName}.zip");
         }
     }
 }

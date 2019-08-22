@@ -18,9 +18,9 @@ namespace Digitz
 
         public DigitRecognizer()
         {
-            LoadModel("MNIST-original.zip");
+            //LoadModel("MNIST-original.zip");
             //LoadModel("MNIST-retrained.zip");
-            //LoadModel("MNIST-retrainedWithHash.zip");
+            LoadModel("MNIST-retrainedWithHash.zip");
         }
 
         /// <summary>
@@ -57,13 +57,6 @@ namespace Digitz
             }
 
             return imageData;
-        }
-
-        internal void Record(Bitmap image)
-        {
-            float[] imageData = ConvertImageToTensorData(image);
-
-            File.AppendAllText(@"..\..\..\..\Training\input\MNISTRecords.txt", string.Join(",", imageData) + Environment.NewLine);
         }
 
         private List<DigitResult> Evaluate(float[] imageData)
@@ -112,6 +105,13 @@ namespace Digitz
                 g.DrawImage(imgToResize, 0, 0, size.Width, size.Height);
             }
             return b;
+        }
+
+        internal void Record(Bitmap image)
+        {
+            float[] imageData = ConvertImageToTensorData(image);
+
+            File.AppendAllText(@"..\..\..\..\Training\input\MNISTRecords.txt", string.Join(",", imageData) + Environment.NewLine);
         }
     }
 

@@ -35,7 +35,7 @@
                    HorizontalAlignment="Stretch"
                    VerticalAlignment="Stretch">
           <InkCanvas.DefaultDrawingAttributes>
-            <DrawingAttributes x:Name="attribute" Width="20" Height="20" Color="Black"/>
+            <DrawingAttributes x:Name="attribute" Width="40" Height="40" Color="Black"/>
           </InkCanvas.DefaultDrawingAttributes>
         </InkCanvas>
       </Border>
